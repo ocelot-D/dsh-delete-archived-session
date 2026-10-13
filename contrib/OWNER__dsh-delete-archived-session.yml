@@ -1,0 +1,6 @@
+url: https://github.com/OWNER/dsh-delete-archived-session
+name: OWNER/dsh-delete-archived-session
+category: session
+description:
+  en: 'Archived-session cleanup for DeepSeek Harness: list every archived session with its on-disk size, then delete one or many behind an explicit --yes confirm and a per-log ownership check. Deletion moves the session folder into a trash directory by default (keeping the exact project/session names, so moving it back restores the session) and a --permanent flag unlinks it instead; the archive entry is cleared afterwards, and a session whose log is unreadable is refused rather than removed.'
+  zh: 'DSH 归档会话清理：列出全部归档会话及其磁盘占用，并在显式 --yes 确认与逐条日志归属校验之后删除单个或多个。默认把会话目录移入回收站（保留原项目/会话目录名，移回即可恢复），加 --permanent 则真删；删除后会清除归档条目，日志不可读的会话一律拒绝删除而非绕过。'

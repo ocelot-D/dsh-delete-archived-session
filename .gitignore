@@ -1,0 +1,13 @@
+# Node
+node_modules/
+
+# Test scratch
+test/.sandbox/
+test/.sandbox-trash/
+*.tgz
+*.zip
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,9 @@
+# Bundle patch for the "delete archived session" plugin.
+#
+# It inserts exactly one row over the profile root. Because a later patch layer
+# addresses this row by `id`, deployments can override the row's `config`
+# without touching this file.
+
+- insert:
+    - id: delete-archived-session
+      name: 'dsh-delete-archived-session'
