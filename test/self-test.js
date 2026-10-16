@@ -82,13 +82,13 @@ await check('refuses a directory whose log belongs to another session', async ()
 	const dir = join(root, projectKey(cwd), encodeSegment(victim));
 	await mkdir(dir, { recursive: true });
 	await writeFile(join(dir, 'log.jsonl'), `${JSON.stringify({ type: 'session', version: 4, id: otherId, createdAt: 1, cwd, isSeeded: false, delegationDepth: 0 })}\n`);
-	await assert.rejects(() => inspectSession(root, victim), /no artifact proves/);
+	await assert.rejects(() => inspectSession(root, victim), /没有任何文件能证明/);
 });
 await check('refuses a directory with no log artifact', async () => {
 	const empty = 'bbbbbbbb-cccc-dddd-eeee-ffffffffffff';
 	const dir = join(root, projectKey(cwd), encodeSegment(empty));
 	await mkdir(dir, { recursive: true });
-	await assert.rejects(() => inspectSession(root, empty), /holds no session log artifact/);
+	await assert.rejects(() => inspectSession(root, empty), /目录里没有任何会话日志文件/);
 });
 
 console.log('containment');
@@ -96,10 +96,10 @@ await check('assertInside accepts a descendant', () => {
 	assert.equal(assertInside(root, targetDir), targetDir);
 });
 await check('assertInside rejects the root itself', () => {
-	assert.throws(() => assertInside(root, root), /sessions root itself/);
+	assert.throws(() => assertInside(root, root), /会话根目录本身/);
 });
 await check('assertInside rejects an escape', () => {
-	assert.throws(() => assertInside(root, join(root, '..', 'elsewhere')), /outside the sessions root/);
+	assert.throws(() => assertInside(root, join(root, '..', 'elsewhere')), /会话根目录之外/);
 });
 
 console.log('compressed logs (zstd)');
@@ -133,7 +133,7 @@ await check('an unreadable compressed log refuses instead of throwing unhandled'
 	const dir = join(root, projectKey(cwd), encodeSegment(id));
 	await mkdir(dir, { recursive: true });
 	await writeFile(join(dir, 'session.v4.jsonl.zstd'), Buffer.from('not a zstd frame at all', 'utf8'));
-	await assert.rejects(() => inspectSession(root, id), /cannot read compressed session log/);
+	await assert.rejects(() => inspectSession(root, id), /无法读取压缩的会话日志/);
 });
 await check('a compressed log naming another session is refused', async () => {
 	const id = 'zstd0004-0000-0000-0000-000000000004';
@@ -141,7 +141,7 @@ await check('a compressed log naming another session is refused', async () => {
 	await mkdir(dir, { recursive: true });
 	const other = { type: 'session', version: 4, id: targetId, createdAt: 1, cwd, isSeeded: false, delegationDepth: 0 };
 	await writeFile(join(dir, 'session.v4.jsonl.zstd'), zstdCompressSync(Buffer.from(`${JSON.stringify(other)}\n`, 'utf8')));
-	await assert.rejects(() => inspectSession(root, id), /no artifact proves/);
+	await assert.rejects(() => inspectSession(root, id), /没有任何文件能证明/);
 });
 
 console.log('deletion');
@@ -192,7 +192,7 @@ function fakeContext(services = {}, sink = { tools: [], commands: [] }) {
 console.log('\ncommand grammar');
 const { default: plugin } = await import('../lib/index.js');
 await check('plugin exports the Cordis contract', () => {
-	assert.equal(plugin.name, 'tool-delete-archived-session');
+	assert.equal(plugin.name, 'delete-archived-session');
 	assert.deepEqual(plugin.inject, [], 'no required injection, so the plugin always mounts');
 	assert.equal(typeof plugin.apply, 'function');
 });
@@ -221,7 +221,7 @@ await check('command refuses an unconfirmed delete', async () => {
 	plugin.apply(ctx, { sessionsRoot: root });
 	const result = await ctx.harness.commands[0].handler({ line: `delete ${otherId}` });
 	assert.equal(result.kind, 'error');
-	assert.match(result.text, /without confirmation/);
+	assert.match(result.text, /没有确认/);
 });
 await check('command reports an empty archive set', async () => {
 	const ctx = fakeContext({ commands: true });
@@ -229,7 +229,7 @@ await check('command reports an empty archive set', async () => {
 	plugin.apply(ctx, { sessionsRoot: root });
 	const result = await ctx.harness.commands[0].handler({ line: 'list' });
 	assert.equal(result.kind, 'success');
-	assert.match(result.text, /No archived sessions/);
+	assert.match(result.text, /没有已归档的会话/);
 });
 await check('end-to-end: deletes an archived session and clears the archive entry', async () => {
 	const id = 'dddddddd-eeee-ffff-0000-111111111111';
@@ -243,7 +243,7 @@ await check('end-to-end: deletes an archived session and clears the archive entr
 	plugin.apply(ctx, { sessionsRoot: root, trashDir: join(root, '..', `dsh-del-archived-e2e-${process.pid}`) });
 	const result = await ctx.harness.commands[0].handler({ line: `delete ${id} --yes` });
 	assert.equal(result.kind, 'success', result.text);
-	assert.match(result.text, /moved to/);
+	assert.match(result.text, /移入回收站/);
 	assert.deepEqual(cleared, [id]);
 	assert.equal(await inspectSession(root, id), undefined);
 	await rm(join(root, '..', `dsh-del-archived-e2e-${process.pid}`), { recursive: true, force: true });
@@ -255,7 +255,7 @@ await check('end-to-end: refuses a non-archived session', async () => {
 	ctx.get = () => ({ archivedSessionIds: [], unarchiveSession: async () => {} });
 	plugin.apply(ctx, { sessionsRoot: root });
 	const result = await ctx.harness.commands[0].handler({ line: `delete ${id} --yes --permanent` });
-	assert.match(result.text, /not an archived session/);
+	assert.match(result.text, /它不是已归档的会话/);
 	assert.ok(await inspectSession(root, id), 'a non-archived session must survive');
 });
 await check('tool refuses a delete without confirm', async () => {
